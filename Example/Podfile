@@ -1,0 +1,6 @@
+use_frameworks!
+target 'SymptomTracking_Tests' do
+  pod 'SymptomTracking', :path => '../'
+  
+  
+end
