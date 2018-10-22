@@ -28,7 +28,7 @@ TODO: Add long description of the pod here.
   s.source           = { :git => 'https://github.com/jdkizer9/SymptomTracking.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '8.0'
+  s.ios.deployment_target = '10.0'
 
   s.source_files = 'SymptomTracking/Classes/**/*'
   
@@ -39,4 +39,14 @@ TODO: Add long description of the pod here.
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
   # s.dependency 'AFNetworking', '~> 2.3'
+
+  s.dependency 'Gloss', '~> 2.0'
+  s.dependency 'LS2SDK', '~> 0.10'
+  s.dependency 'ResearchKit', '~> 1.5'
+  s.dependency 'ResearchSuiteExtensions', '~> 0.19'
+  s.dependency 'ResearchSuiteTaskBuilder', '~> 0.13'
+  s.dependency 'ResearchSuiteResultsProcessor', '~> 0.9'
+  s.dependency 'ResearchSuiteApplicationFramework', '~> 0.20'
+  s.dependency 'SnapKit', '~> 4.0'
+
 end

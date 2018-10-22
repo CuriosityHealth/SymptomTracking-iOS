@@ -1,0 +1,6 @@
+framework module SymptomTracking {
+  umbrella header "SymptomTracking-umbrella.h"
+
+  export *
+  module * { export * }
+}

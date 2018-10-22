@@ -1,0 +1,16 @@
+PODS:
+  - SymptomTracking (0.1.0)
+
+DEPENDENCIES:
+  - SymptomTracking (from `../`)
+
+EXTERNAL SOURCES:
+  SymptomTracking:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  SymptomTracking: c23b0631dca0c439f1353a1b02df4e245a85ec05
+
+PODFILE CHECKSUM: 26cdf300d4f77f0aaa8ac70f18becc71bbb215ca
+
+COCOAPODS: 1.6.0.beta.2

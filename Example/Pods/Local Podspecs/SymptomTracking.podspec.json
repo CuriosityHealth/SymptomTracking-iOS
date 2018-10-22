@@ -1,0 +1,22 @@
+{
+  "name": "SymptomTracking",
+  "version": "0.1.0",
+  "summary": "A short description of SymptomTracking.",
+  "description": "TODO: Add long description of the pod here.",
+  "homepage": "https://github.com/jdkizer9/SymptomTracking",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "jdkizer9": "james@curiosityhealth.com"
+  },
+  "source": {
+    "git": "https://github.com/jdkizer9/SymptomTracking.git",
+    "tag": "0.1.0"
+  },
+  "platforms": {
+    "ios": "8.0"
+  },
+  "source_files": "SymptomTracking/Classes/**/*"
+}
