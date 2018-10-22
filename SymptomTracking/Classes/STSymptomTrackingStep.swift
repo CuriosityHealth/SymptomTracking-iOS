@@ -9,7 +9,7 @@ import UIKit
 import ResearchSuiteExtensions
 
 open class STSymptomTrackingStep: RSEnhancedMultipleChoiceStep {
-
+    
     override open func stepViewControllerClass() -> AnyClass {
         return STSymptomTrackingStepViewController.self
     }

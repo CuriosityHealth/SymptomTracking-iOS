@@ -19,48 +19,57 @@ open class STSymptomTrackingStepGenerator: RSTBBaseStepGenerator {
     
     public init() {}
     
-    open func generateChoices(
-        symptoms: [STSymptom],
+    open func generateAuxiliaryItem(
+        ratingOptions: [STRating],
+        ratingPrompt: String?,
+        helper: RSTBTaskBuilderHelper
+    ) -> ORKFormItem? {
+        
+        let ratingOptionChoices: [ORKTextChoice] = ratingOptions.map { ratingOption in
+            return ORKTextChoice(
+                text: helper.localizationHelper.localizedString(ratingOption.prompt),
+                detailText: nil,
+                value: NSNumber(value: ratingOption.value),
+                exclusive: false
+            )
+        }
+        
+        guard let firstRatingPrompt = ratingOptions.first?.prompt,
+            let lastRatingPrompt = ratingOptions.last?.prompt else {
+                return nil
+        }
+        
+        let answerFormat = RSEnhancedTextScaleAnswerFormat(
+            textChoices: ratingOptionChoices,
+            defaultIndex: -1,
+            vertical: false,
+            maxValueLabel: nil,
+            minValueLabel: nil,
+            maximumValueDescription: helper.localizationHelper.localizedString(firstRatingPrompt),
+            neutralValueDescription: nil,
+            minimumValueDescription: helper.localizationHelper.localizedString(lastRatingPrompt)
+        )
+        
+        let formItem = ORKFormItem(identifier: "rating", text: ratingPrompt, answerFormat: answerFormat)
+        formItem.isOptional = false
+        return formItem
+        
+    }
+    
+    open func getTextChoiceGenerator(
         ratingOptions: [STRating],
         ratingPrompt: String?,
         supportsAddingSymptoms: Bool,
         helper: RSTBTaskBuilderHelper
-        ) -> [RSTextChoiceWithAuxiliaryAnswer] {
+        ) -> (STSymptom) -> RSTextChoiceWithAuxiliaryAnswer {
         
+        let auxiliaryItem: ORKFormItem? = self.generateAuxiliaryItem(
+            ratingOptions: ratingOptions,
+            ratingPrompt: ratingPrompt,
+            helper: helper
+        )
         
-        let auxiliaryItem: ORKFormItem? = {
-            let ratingOptionChoices: [ORKTextChoice] = ratingOptions.map { ratingOption in
-                return ORKTextChoice(
-                    text: helper.localizationHelper.localizedString(ratingOption.prompt),
-                    detailText: nil,
-                    value: NSNumber(value: ratingOption.value),
-                    exclusive: false
-                )
-            }
-            
-            guard let firstRatingPrompt = ratingOptions.first?.prompt,
-                let lastRatingPrompt = ratingOptions.last?.prompt else {
-                    return nil
-            }
-            
-            let answerFormat = RSEnhancedTextScaleAnswerFormat(
-                textChoices: ratingOptionChoices,
-                defaultIndex: -1,
-                vertical: false,
-                maxValueLabel: nil,
-                minValueLabel: nil,
-                maximumValueDescription: helper.localizationHelper.localizedString(firstRatingPrompt),
-                neutralValueDescription: nil,
-                minimumValueDescription: helper.localizationHelper.localizedString(lastRatingPrompt)
-            )
-            
-            let formItem = ORKFormItem(identifier: "rating", text: ratingPrompt, answerFormat: answerFormat)
-            formItem.isOptional = false
-            return formItem
-        }()
-        
-        let symptomChoices: [RSTextChoiceWithAuxiliaryAnswer] = symptoms.map { symptom in
-            
+        let textChoiceGenerator: (STSymptom) -> RSTextChoiceWithAuxiliaryAnswer = { symptom in
             return RSTextChoiceWithAuxiliaryAnswer(
                 identifier: helper.localizationHelper.localizedString(symptom.identifier),
                 text: helper.localizationHelper.localizedString(symptom.prompt),
@@ -69,18 +78,48 @@ open class STSymptomTrackingStepGenerator: RSTBBaseStepGenerator {
                 exclusive: false,
                 auxiliaryItem: auxiliaryItem
             )
-            
         }
         
-        //TODO: Add support for adding symptoms
-        if supportsAddingSymptoms {
-            return symptomChoices
-        }
-        else {
-            return symptomChoices
-        }
-        
+        return textChoiceGenerator
     }
+    
+//    open func generateChoices(
+//        symptoms: [STSymptom],
+//        ratingOptions: [STRating],
+//        ratingPrompt: String?,
+//        supportsAddingSymptoms: Bool,
+//        helper: RSTBTaskBuilderHelper
+//        ) -> [RSTextChoiceWithAuxiliaryAnswer] {
+//
+//
+//        let auxiliaryItem: ORKFormItem? = self.generateAuxiliaryItem(
+//            ratingOptions: ratingOptions,
+//            ratingPrompt: ratingPrompt,
+//            helper: helper
+//        )
+//
+//        let textChoiceGenerator: (STSymptom) -> RSTextChoiceWithAuxiliaryAnswer = { symptom in
+//            return RSTextChoiceWithAuxiliaryAnswer(
+//                identifier: helper.localizationHelper.localizedString(symptom.identifier),
+//                text: helper.localizationHelper.localizedString(symptom.prompt),
+//                detailText: nil,
+//                value: symptom.identifier as NSString,
+//                exclusive: false,
+//                auxiliaryItem: auxiliaryItem
+//            )
+//        }
+//
+//        let symptomChoices: [RSTextChoiceWithAuxiliaryAnswer] = symptoms.map { textChoiceGenerator($0) }
+//
+//        //TODO: Add support for adding symptoms
+//        if supportsAddingSymptoms {
+//            return symptomChoices
+//        }
+//        else {
+//            return symptomChoices
+//        }
+//
+//    }
     
     open func generateAnswerFormat(type: String, jsonObject: JSON, helper: RSTBTaskBuilderHelper) -> STSymptomTrackingAnswerFormat? {
         guard let stepDescriptor = STSymptomTrackingStepDescriptor(json: jsonObject) else {
@@ -133,13 +172,22 @@ open class STSymptomTrackingStepGenerator: RSTBBaseStepGenerator {
                 return nil
         }
         
-        let choices = self.generateChoices(
-            symptoms: symptoms,
+        let textChoiceGenerator = self.getTextChoiceGenerator(
             ratingOptions: ratingOptions,
             ratingPrompt: stepDescriptor.ratingPrompt,
             supportsAddingSymptoms: stepDescriptor.supportsAddingSymptoms,
             helper: helper
         )
+        
+//        let choices = self.generateChoices(
+//            symptoms: symptoms,
+//            ratingOptions: ratingOptions,
+//            ratingPrompt: stepDescriptor.ratingPrompt,
+//            supportsAddingSymptoms: stepDescriptor.supportsAddingSymptoms,
+//            helper: helper
+//        )
+        
+        let choices = symptoms.map { textChoiceGenerator($0) }
         
         guard choices.count > 0 else {
             return nil
@@ -147,6 +195,7 @@ open class STSymptomTrackingStepGenerator: RSTBBaseStepGenerator {
         
         return STSymptomTrackingAnswerFormat(
             choices: choices,
+            textChoiceGenerator: textChoiceGenerator,
             supportsAddingSymptoms: stepDescriptor.supportsAddingSymptoms
         )
         

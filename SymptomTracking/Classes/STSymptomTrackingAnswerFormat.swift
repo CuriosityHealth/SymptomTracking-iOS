@@ -12,11 +12,15 @@ import ResearchSuiteExtensions
 open class STSymptomTrackingAnswerFormat: ORKTextChoiceAnswerFormat {
     
     public let supportsAddingSymptoms: Bool
+    public let textChoiceGenerator: (STSymptom) -> RSTextChoiceWithAuxiliaryAnswer
+    
     public init(
         choices: [RSTextChoiceWithAuxiliaryAnswer],
+        textChoiceGenerator: @escaping (STSymptom) -> RSTextChoiceWithAuxiliaryAnswer,
         supportsAddingSymptoms: Bool
         ) {
         self.supportsAddingSymptoms = supportsAddingSymptoms
+        self.textChoiceGenerator = textChoiceGenerator
         super.init(style: .multipleChoice, textChoices: choices)
     }
     
