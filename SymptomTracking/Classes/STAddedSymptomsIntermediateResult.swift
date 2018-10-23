@@ -63,7 +63,7 @@ open class STAddedSymptomsIntermediateResult: RSRPIntermediateResult, RSRPFrontE
 }
 
 extension STAddedSymptomsIntermediateResult {
-    @objc open func evaluate() -> AnyObject? {
+    @objc open override func evaluate() -> AnyObject? {
         return self.addedSymptoms as AnyObject
     }
 }
