@@ -187,14 +187,15 @@ open class STSymptomTrackingStepGenerator: RSTBBaseStepGenerator {
 //            helper: helper
 //        )
         
-        let choices = symptoms.map { textChoiceGenerator($0) }
-        
-        guard choices.count > 0 else {
-            return nil
-        }
+//        let choices = symptoms.map { textChoiceGenerator($0) }
+//
+//        guard choices.count > 0 else {
+//            return nil
+//        }
         
         return STSymptomTrackingAnswerFormat(
-            choices: choices,
+            symptoms: symptoms,
+            ratings: ratingOptions,
             textChoiceGenerator: textChoiceGenerator,
             supportsAddingSymptoms: stepDescriptor.supportsAddingSymptoms
         )

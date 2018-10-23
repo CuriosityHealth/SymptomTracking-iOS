@@ -11,6 +11,11 @@ import ResearchKit
 
 open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepViewController {
 
+    enum STSymptomTrackingStepViewControllerErrors: Error {
+        case unknownSymptom
+        case unknownRating
+        case malformedSelection
+    }
     
     var symptomTrackingStep: STSymptomTrackingStep {
         return self.step as! STSymptomTrackingStep
@@ -37,37 +42,26 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
         
         //here, we can initialize our addedSymptoms array based on results
         
-        guard let defaultTextChoices = self.symptomTrackingAnswerFormat.textChoices as? [RSTextChoiceWithAuxiliaryAnswer] else {
-                assertionFailure("Text choices must be of type RSTextChoiceWithAuxiliaryAnswer")
-                return
-        }
+//        guard let defaultTextChoices = self.symptomTrackingAnswerFormat.textChoices as? [RSTextChoiceWithAuxiliaryAnswer] else {
+//                assertionFailure("Text choices must be of type RSTextChoiceWithAuxiliaryAnswer")
+//                return
+//        }
         
         let stepResult: ORKStepResult? = result as? ORKStepResult
-        let choiceResult: RSEnhancedMultipleChoiceResult? = stepResult?.results?.first as? RSEnhancedMultipleChoiceResult
         
-        let addedSymptoms: [STSymptom] = {
-            
-            if let results = stepResult?.results,
-                results.count > 1,
-                let addedSymptomsResult = results[1] as? STSymptomTrackingAddedSymptomsResult,
-                let addedSymptoms = addedSymptomsResult.addedSymptoms {
-                return addedSymptoms
-            }
-            else {
-                return []
-            }
-            
-        }()
+        let symptomTrackingResult: STSymptomTrackingResult? = stepResult?.results?.first as? STSymptomTrackingResult
+        
+        let addedSymptoms = symptomTrackingResult?.addedSymptoms ?? []
         
         self.addedSymptoms = addedSymptoms
         
         var cellControllerMap: [Int: RSEnhancedMultipleChoiceCellController] = [:]
         
-        let textChoices = defaultTextChoices + self.addedSymptoms.map { self.symptomTrackingAnswerFormat.textChoiceGenerator($0) }
+        let textChoices = self.symptoms.map { self.symptomTrackingAnswerFormat.textChoiceGenerator($0) }
         
         textChoices.enumerated().forEach { offset, textChoice in
             
-            cellControllerMap[offset] = self.generateCellController(for: textChoice, choiceSelection: choiceResult?.choiceAnswer(for: textChoice.identifier) )
+            cellControllerMap[offset] = self.generateCellController(for: textChoice, choiceSelection: symptomTrackingResult?.choiceAnswer(for: textChoice.identifier) )
             
         }
         
@@ -91,19 +85,24 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
     }
     */
     
+    var symptoms: [STSymptom] {
+        return self.symptomTrackingAnswerFormat.symptoms + self.addedSymptoms
+    }
+    
     open override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if self.symptomTrackingAnswerFormat.supportsAddingSymptoms {
-            return self.symptomTrackingAnswerFormat.textChoices.count + self.addedSymptoms.count + 1
+            return self.symptoms.count + 1
         }
         else {
-            return self.symptomTrackingAnswerFormat.textChoices.count
+            return self.symptoms.count
         }
     }
     
     open override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let row = indexPath.row
+        let symptoms = self.symptoms
         if self.symptomTrackingAnswerFormat.supportsAddingSymptoms &&
-            row == self.symptomTrackingAnswerFormat.textChoices.count + self.addedSymptoms.count {
+            row == symptoms.count {
             
             let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "default")
 //            cell.snp.makeConstraints { (make) in
@@ -122,7 +121,7 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
     
     func addUserDefinedSymptom(symptomTitle: String, tableView: UITableView) {
         
-        let duplicate = self.addedSymptoms.contains(where: { $0.prompt == symptomTitle }) || self.symptomTrackingAnswerFormat.textChoices.contains(where: { $0.text == symptomTitle })
+        let duplicate = self.symptoms.contains(where: { $0.prompt == symptomTitle })
         
         if duplicate {
             
@@ -142,7 +141,7 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
             let newSymptom = STSymptom(identifier: symptomTitle, prompt: symptomTitle, text: symptomTitle, userDefined: true)
             self.addedSymptoms = self.addedSymptoms + [newSymptom]
 //            let newIndexPath = IndexPath(row: self.symptoms.count - 1, section: 0)
-            let newIndex = self.symptomTrackingAnswerFormat.textChoices.count + self.addedSymptoms.count - 1
+            let newIndex = self.symptoms.count - 1
             let newIndexPath = IndexPath(row: newIndex, section: 0)
             
             let newTextChoice = self.symptomTrackingAnswerFormat.textChoiceGenerator(newSymptom)
@@ -192,7 +191,7 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
     override open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let row = indexPath.row
         if self.symptomTrackingAnswerFormat.supportsAddingSymptoms &&
-            row == self.symptomTrackingAnswerFormat.textChoices.count + self.addedSymptoms.count {
+            row == self.symptoms.count {
             tableView.deselectRow(at: indexPath, animated: true)
             
             self.startAdd(tableView: tableView)
@@ -203,27 +202,87 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
         }
     }
 
+    private var symptomMap: [String: STSymptom] {
+        return Dictionary.init(uniqueKeysWithValues:  self.symptoms.map { ($0.identifier, $0) } )
+    }
+    
+    private var ratingMap: [Int: STRating] {
+        return Dictionary.init(uniqueKeysWithValues: self.symptomTrackingAnswerFormat.ratings.map { ($0.value, $0) } )
+    }
+    
+    func symptom(for selection: RSEnahncedMultipleChoiceSelection, symptomMap: [String: STSymptom]) throws -> STSymptom {
+        
+        guard let symptom = symptomMap[selection.identifier] else {
+            throw STSymptomTrackingStepViewControllerErrors.unknownSymptom
+        }
+        
+        return symptom
+    }
+    
+    func rating(for selection: RSEnahncedMultipleChoiceSelection, ratingMap: [Int: STRating]) throws -> STRating {
+        
+        //get value from aux item
+        guard let auxItem = selection.auxiliaryResult,
+            let textChoiceResult = auxItem as? ORKChoiceQuestionResult,
+            let choiceAnswers = textChoiceResult.choiceAnswers else {
+                throw STSymptomTrackingStepViewControllerErrors.malformedSelection
+        }
+        
+        print(choiceAnswers)
+        guard let choice = choiceAnswers.first as? ORKTextChoice,
+            let ratingValue = choice.value as? NSNumber else {
+            throw STSymptomTrackingStepViewControllerErrors.malformedSelection
+        }
+        
+        let index = ratingValue.intValue
+        //find rating associated with value
+        guard let rating = ratingMap[index] else {
+            throw STSymptomTrackingStepViewControllerErrors.unknownSymptom
+        }
+        
+        return rating
+    }
+    
     override open var result: ORKStepResult? {
         guard let result = super.result else {
             return nil
         }
 
-        let multipleChoiceResult = RSEnhancedMultipleChoiceResult(identifier: self.symptomTrackingStep.identifier)
+        let symptomTrackingResult = STSymptomTrackingResult(identifier: self.symptomTrackingStep.identifier)
 
         let selections = self.cellControllerMap.values.compactMap { (cellController) -> RSEnahncedMultipleChoiceSelection? in
             return cellController.choiceSelection
         }
 
-        multipleChoiceResult.choiceAnswers = selections
-
-        if self.symptomTrackingAnswerFormat.supportsAddingSymptoms {
-            let addedSymptomsResult = STSymptomTrackingAddedSymptomsResult(identifier: "addedSymptoms")
-            addedSymptomsResult.addedSymptoms = self.addedSymptoms
-            result.results = [multipleChoiceResult, addedSymptomsResult]
-        }
-        else {
-            result.results = [multipleChoiceResult]
-        }
+        symptomTrackingResult.choiceAnswers = selections
+        
+        let event: STSymptomSeverityRatingEvent? = {
+           
+            let symptomMap = self.symptomMap
+            let ratingMap = self.ratingMap
+            let symptomSeverityRatingsOpt: [STSympomSeverityRating]? = try? selections.map { [unowned self] selection in
+                let symptom = try self.symptom(for: selection, symptomMap: symptomMap)
+                let rating = try self.rating(for: selection, ratingMap: ratingMap)
+                return STSympomSeverityRating(symptom: symptom, rating: rating)
+            }
+            
+            guard let symptomSeverityRatings = symptomSeverityRatingsOpt else {
+                return nil
+            }
+            
+            let event = STSymptomSeverityRatingEvent(
+                symptomSeverityRatings: symptomSeverityRatings,
+                startTime: result.startDate,
+                endTime: nil
+            )
+            
+            return event
+        }()
+        
+        symptomTrackingResult.event = event
+        symptomTrackingResult.addedSymptoms = self.addedSymptoms
+        
+        result.results = [symptomTrackingResult]
         
         return result
     }

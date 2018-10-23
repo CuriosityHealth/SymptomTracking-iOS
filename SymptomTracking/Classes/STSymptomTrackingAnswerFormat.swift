@@ -13,15 +13,28 @@ open class STSymptomTrackingAnswerFormat: ORKTextChoiceAnswerFormat {
     
     public let supportsAddingSymptoms: Bool
     public let textChoiceGenerator: (STSymptom) -> RSTextChoiceWithAuxiliaryAnswer
+    public let symptoms: [STSymptom]
+    public let ratings: [STRating]
+    
+    open override var textChoices: [ORKTextChoice] {
+        return self.symptoms.map { self.textChoiceGenerator($0) }
+    }
+    
+    open override var style: ORKChoiceAnswerStyle {
+        return .multipleChoice
+    }
     
     public init(
-        choices: [RSTextChoiceWithAuxiliaryAnswer],
+        symptoms: [STSymptom],
+        ratings: [STRating],
         textChoiceGenerator: @escaping (STSymptom) -> RSTextChoiceWithAuxiliaryAnswer,
         supportsAddingSymptoms: Bool
         ) {
-        self.supportsAddingSymptoms = supportsAddingSymptoms
+        self.symptoms = symptoms
+        self.ratings = ratings
         self.textChoiceGenerator = textChoiceGenerator
-        super.init(style: .multipleChoice, textChoices: choices)
+        self.supportsAddingSymptoms = supportsAddingSymptoms
+        super.init(style: .multipleChoice, textChoices: [])
     }
     
     required public init?(coder aDecoder: NSCoder) {
