@@ -10,7 +10,7 @@ import LS2SDK
 import Gloss
 
 
-public struct STSymptom: Glossy {
+public struct STSymptom: Glossy, Codable {
     public let identifier: String
     public let prompt: String
     public let text: String
@@ -67,7 +67,7 @@ public struct STSymptom: Glossy {
     }
 }
 
-public struct STRating: Glossy {
+public struct STRating: Glossy, Codable {
     
     public let identifier: String
     public let prompt: String
@@ -104,7 +104,7 @@ public struct STRating: Glossy {
     }
 }
 
-public struct STSympomSeverityRating: Glossy {
+public struct STSympomSeverityRating: Glossy, Codable {
     
     let symptom: STSymptom
     let rating: STRating
@@ -136,7 +136,7 @@ public struct STSympomSeverityRating: Glossy {
     
 }
 
-public struct STSymptomSeverityRatingEvent {
+public struct STSymptomSeverityRatingEvent: Codable {
     
     let startTime: Date
     let endTime: Date?
@@ -157,20 +157,57 @@ extension STSymptomSeverityRatingEvent: Glossy {
     
     public init?(json: JSON) {
         guard let symptomSeverityRatingsJSON: [JSON] = "symptom_serverity_ratings" <~~ json,
-            let startTime: Date = Gloss.Decoder.decode(dateISO8601ForKey: "start_time")(json) else {
+            let timeFrame: JSON = "time_frame" <~~ json else {
                 return nil
+        }
+        
+        let (startTimeOpt, endTimeOpt): (Date?, Date?) = {
+           
+            if let dateTime = Gloss.Decoder.decode(dateISO8601ForKey: "date_time")(timeFrame) {
+                return (dateTime, nil)
+            }
+            else if let timeInterval: JSON = "time_interval" <~~ timeFrame,
+                let startTime = Gloss.Decoder.decode(dateISO8601ForKey: "start_date_time")(timeInterval) {
+                
+                let endTime: Date? = Gloss.Decoder.decode(dateISO8601ForKey: "end_date_time")(timeInterval)
+                return (startTime, endTime)
+            }
+            else {
+                return (nil, nil)
+            }
+            
+        }()
+        
+        guard let startTime = startTimeOpt else {
+            return nil
         }
         
         self.symptomSeverityRatings = symptomSeverityRatingsJSON.compactMap({ STSympomSeverityRating(json: $0) })
         self.startTime = startTime
-        self.endTime = Gloss.Decoder.decode(dateISO8601ForKey: "end_time")(json)
+        self.endTime = endTimeOpt
     }
     
     public func toJSON() -> JSON? {
+        
+        let timeFrame: JSON? = {
+            if let endTime = self.endTime {
+                return jsonify([
+                    "time_interval" ~~> jsonify([
+                        Gloss.Encoder.encode(dateISO8601ForKey: "start_date_time")(self.startTime),
+                        Gloss.Encoder.encode(dateISO8601ForKey: "end_date_time")(endTime)
+                        ])
+                    ])
+            }
+            else {
+                return jsonify([
+                    Gloss.Encoder.encode(dateISO8601ForKey: "date_time")(self.startTime)
+                    ])
+            }
+        }()
+        
         return jsonify([
             "symptom_serverity_ratings" ~~> self.symptomSeverityRatings,
-            Gloss.Encoder.encode(dateISO8601ForKey: "start_time")(self.startTime),
-            Gloss.Encoder.encode(dateISO8601ForKey: "end_time")(self.endTime)
+            "time_frame" ~~> timeFrame
             ])
     }
 }

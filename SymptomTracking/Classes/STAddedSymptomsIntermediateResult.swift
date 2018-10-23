@@ -1,9 +1,11 @@
 //
-//  STSymptomTrackingEventIntermediateResult.swift
+//  STAddedSymptomsIntermediateResult.swift
 //  SymptomTracking
 //
 //  Created by James Kizer on 10/22/18.
 //
+
+import UIKit
 
 import UIKit
 import ResearchSuiteResultsProcessor
@@ -11,25 +13,26 @@ import ResearchKit
 import Gloss
 import LS2SDK
 
-open class STSymptomTrackingEventIntermediateResult: RSRPIntermediateResult, RSRPFrontEndTransformer {
+open class STAddedSymptomsIntermediateResult: RSRPIntermediateResult, RSRPFrontEndTransformer {
     
     public static func supportsType(type: String) -> Bool {
-        return type == "symptomTrackingEvent"
+        return type == "addedSymptoms"
     }
     
     public static func transform(taskIdentifier: String, taskRunUUID: UUID, parameters: [String : AnyObject]) -> RSRPIntermediateResult? {
         
         guard let stepResult = parameters["symptoms"] as? ORKStepResult,
             let symptomTrackingResult = stepResult.firstResult as? STSymptomTrackingResult,
-            let event = symptomTrackingResult.event else {
+            let addedSymptoms = symptomTrackingResult.addedSymptoms,
+            addedSymptoms.count > 0 else {
                 return nil
         }
         
-        let result = STSymptomTrackingEventIntermediateResult(
+        let result = STAddedSymptomsIntermediateResult(
             uuid: UUID(),
             taskIdentifier: taskIdentifier,
             taskRunUUID: taskRunUUID,
-            event: event
+            addedSymptoms: addedSymptoms
         )
         
         result.startDate = symptomTrackingResult.startDate
@@ -38,19 +41,19 @@ open class STSymptomTrackingEventIntermediateResult: RSRPIntermediateResult, RSR
         return result
     }
     
-    public let event: STSymptomSeverityRatingEvent
+    public let addedSymptoms: [STSymptom]
     
     public init(
         uuid: UUID,
         taskIdentifier: String,
         taskRunUUID: UUID,
-        event: STSymptomSeverityRatingEvent
+        addedSymptoms: [STSymptom]
         ) {
         
-        self.event = event
+        self.addedSymptoms = addedSymptoms
         
         super.init(
-            type: "STSymptomTrackingEventResult",
+            type: "STAddedSymptomsIntermediateResult",
             uuid: uuid,
             taskIdentifier: taskIdentifier,
             taskRunUUID: taskRunUUID
@@ -59,18 +62,8 @@ open class STSymptomTrackingEventIntermediateResult: RSRPIntermediateResult, RSR
     
 }
 
-extension STSymptomTrackingEventIntermediateResult: LS2DatapointConvertible {
-    public func toDatapoint(builder: LS2DatapointBuilder.Type) -> LS2Datapoint? {
-        
-        let datapoint = STSymptomTrackingEventDatapoint(
-            identifier: self.uuid,
-            event: self.event,
-            sourceCreationTime: self.startDate ?? Date(),
-            metadata: nil
-        )
-        
-        return builder.copyDatapoint(datapoint: datapoint)
-        
+extension STAddedSymptomsIntermediateResult {
+    @objc open func evaluate() -> AnyObject? {
+        return self.addedSymptoms as AnyObject
     }
-    
 }
