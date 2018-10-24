@@ -45,9 +45,9 @@ open class STSymptomTrackingStepGenerator: RSTBBaseStepGenerator {
             vertical: false,
             maxValueLabel: nil,
             minValueLabel: nil,
-            maximumValueDescription: helper.localizationHelper.localizedString(firstRatingPrompt),
+            maximumValueDescription: helper.localizationHelper.localizedString(lastRatingPrompt),
             neutralValueDescription: nil,
-            minimumValueDescription: helper.localizationHelper.localizedString(lastRatingPrompt)
+            minimumValueDescription: helper.localizationHelper.localizedString(firstRatingPrompt)
         )
         
         let formItem = ORKFormItem(identifier: "rating", text: ratingPrompt, answerFormat: answerFormat)
