@@ -10,7 +10,7 @@ import LS2SDK
 import Gloss
 
 
-public struct STSymptom: Glossy, Codable {
+public struct STSymptom: Glossy, Codable, Equatable {
     public let identifier: String
     public let prompt: String
     public let text: String
