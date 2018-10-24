@@ -68,11 +68,13 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
         self.cellControllerMap = cellControllerMap
     }
     
-//    override func viewDidLoad() {
-//        super.viewDidLoad()
-//
-//        // Do any additional setup after loading the view.
-//    }
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+
+        let addSymptomCellNIB = UINib(nibName: "STAddSymptomTableViewCell", bundle: Bundle(for: STAddSymptomTableViewCell.self))
+        self.tableView.register(addSymptomCellNIB, forCellReuseIdentifier: "add_symptom")
+        
+    }
     
 
     /*
@@ -104,13 +106,14 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
         if self.symptomTrackingAnswerFormat.supportsAddingSymptoms &&
             row == symptoms.count {
             
-            let cell = UITableViewCell(style: .subtitle, reuseIdentifier: "default")
-//            cell.snp.makeConstraints { (make) in
-//                make.height.equalTo(60)
-//            }
-            cell.textLabel?.text = "Add New Symptom"
-            cell.textLabel?.textColor = self.view.tintColor
-            cell.detailTextLabel?.text = nil
+            let cell = tableView.dequeueReusableCell(withIdentifier: "add_symptom", for: indexPath) as! STAddSymptomTableViewCell
+            cell.selectionStyle = .none
+            
+            cell.button.setTitle("Add New Symptom", for: .normal)
+            cell.onTap = { [unowned tableView] cell in
+                self.startAdd(tableView: tableView)
+            }
+            
             return cell
             
         }
@@ -188,13 +191,24 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
         self.present(alertController, animated: true, completion: nil)
     }
     
+    
+    open func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        if self.symptomTrackingAnswerFormat.supportsAddingSymptoms &&
+            indexPath.row == self.symptoms.count {
+            return nil
+        }
+        else {
+            return indexPath
+        }
+    }
+    
     override open func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let row = indexPath.row
         if self.symptomTrackingAnswerFormat.supportsAddingSymptoms &&
             row == self.symptoms.count {
             tableView.deselectRow(at: indexPath, animated: true)
             
-            self.startAdd(tableView: tableView)
+//            self.startAdd(tableView: tableView)
             
         }
         else {
