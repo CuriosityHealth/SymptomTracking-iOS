@@ -163,7 +163,7 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
     }
     
     func startAdd(tableView: UITableView) {
-        let alertController = UIAlertController(title: "Add New Symptom", message: "Plase give the symptom a title.", preferredStyle: UIAlertController.Style.alert)
+        let alertController = UIAlertController(title: "Add New Symptom", message: "Please give the symptom a title.", preferredStyle: UIAlertController.Style.alert)
         
         alertController.addTextField { (textField) in
             textField.placeholder = "Symptom Title (e.g., Anxiety)"
@@ -274,10 +274,10 @@ open class STSymptomTrackingStepViewController: RSEnhancedMultipleChoiceStepView
            
             let symptomMap = self.symptomMap
             let ratingMap = self.ratingMap
-            let symptomSeverityRatingsOpt: [STSympomSeverityRating]? = try? selections.map { [unowned self] selection in
+            let symptomSeverityRatingsOpt: [STSymptomSeverityRating]? = try? selections.map { [unowned self] selection in
                 let symptom = try self.symptom(for: selection, symptomMap: symptomMap)
                 let rating = try self.rating(for: selection, ratingMap: ratingMap)
-                return STSympomSeverityRating(symptom: symptom, rating: rating)
+                return STSymptomSeverityRating(symptom: symptom, rating: rating)
             }
             
             guard let symptomSeverityRatings = symptomSeverityRatingsOpt else {

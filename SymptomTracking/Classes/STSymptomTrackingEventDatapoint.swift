@@ -104,10 +104,10 @@ public struct STRating: Glossy, Codable {
     }
 }
 
-public struct STSympomSeverityRating: Glossy, Codable {
+public struct STSymptomSeverityRating: Glossy, Codable {
     
-    let symptom: STSymptom
-    let rating: STRating
+    public let symptom: STSymptom
+    public let rating: STRating
     
     public init?(json: JSON) {
         guard let symptom: STSymptom = "symptom" <~~ json,
@@ -138,12 +138,12 @@ public struct STSympomSeverityRating: Glossy, Codable {
 
 public struct STSymptomSeverityRatingEvent: Codable {
     
-    let startTime: Date
-    let endTime: Date?
-    let symptomSeverityRatings: [STSympomSeverityRating]
+    public let startTime: Date
+    public let endTime: Date?
+    public let symptomSeverityRatings: [STSymptomSeverityRating]
     
     public init(
-        symptomSeverityRatings: [STSympomSeverityRating],
+        symptomSeverityRatings: [STSymptomSeverityRating],
         startTime: Date,
         endTime: Date?
         ) {
@@ -182,7 +182,7 @@ extension STSymptomSeverityRatingEvent: Glossy {
             return nil
         }
         
-        self.symptomSeverityRatings = symptomSeverityRatingsJSON.compactMap({ STSympomSeverityRating(json: $0) })
+        self.symptomSeverityRatings = symptomSeverityRatingsJSON.compactMap({ STSymptomSeverityRating(json: $0) })
         self.startTime = startTime
         self.endTime = endTimeOpt
     }
@@ -276,7 +276,7 @@ open class STSymptomTrackingEventDatapoint: NSObject, LS2Datapoint, LS2Datapoint
         return self.event.endTime
     }
 
-    public var symptomSeverityRatings: [STSympomSeverityRating] {
+    public var symptomSeverityRatings: [STSymptomSeverityRating] {
         return self.event.symptomSeverityRatings
     }
     

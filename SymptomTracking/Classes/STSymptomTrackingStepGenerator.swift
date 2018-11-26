@@ -134,7 +134,19 @@ open class STSymptomTrackingStepGenerator: RSTBBaseStepGenerator {
                     return symptoms
                 }
                 else if let symptomsJSON = symptomsArray as? [JSON] {
-                    return symptomsJSON.compactMap { STSymptom(json: $0) }
+                    return symptomsJSON.compactMap { symptomJSON in
+                        if let symptom = STSymptom(json: symptomJSON) {
+                            return STSymptom(
+                                identifier: symptom.identifier,
+                                prompt: helper.localizationHelper.localizedString(symptom.prompt),
+                                text: helper.localizationHelper.localizedString(symptom.text),
+                                userDefined: symptom.userDefined
+                            )
+                        }
+                        else {
+                            return nil
+                        }
+                    }
                 }
                 else {
                     return []
@@ -159,7 +171,18 @@ open class STSymptomTrackingStepGenerator: RSTBBaseStepGenerator {
                 return ratingOptions
             }
             else if let ratingOptionsJSON = ratingOptionsArray as? [JSON] {
-                return ratingOptionsJSON.compactMap { STRating(json: $0) }
+                return ratingOptionsJSON.compactMap { ratingJSON in
+                    if let rating = STRating(json: ratingJSON) {
+                        return STRating(
+                            identifier: rating.identifier,
+                            prompt: helper.localizationHelper.localizedString(rating.prompt),
+                            value: rating.value
+                        )
+                    }
+                    else {
+                        return nil
+                    }
+                }
             }
             else {
                 return []
